@@ -12,6 +12,8 @@ import api.configs as configs
 from api.exts import db
 from api import models
 from loguru import logger
+import threading
+
 
 app = Flask(__name__)
 
@@ -93,36 +95,71 @@ def get_questionaire():
     return data
 
 
+def upload_sql(openid, form):
+    with app.app_context():
+        try:
+            __temp = ""
+            for key in form:
+                if key != "openid":
+                    __temp += str(f"{key}: {form.get(key)}；")
+                questionaire = models.Questionaire(openid=openid, data=__temp)
+            db.session.add(questionaire)
+            db.session.commit()
+            logger.info(f"用户:openid:{openid}问卷数据已上传至数据库")
+        except:
+            logger.error(f"用户:openid:{openid}数据库上传失败")
+
+
+def send_mail(openid, form):
+    with app.app_context():
+        try:
+            __temp = ""
+            for key in form:
+                if key != "openid":
+                    __temp += str(f"{key}: {form.get(key)}\n")
+            with open("mail.txt", "r") as f:
+                recipients = json.loads(f.read())
+            message = Message(subject=f'收到新的问卷结果【{form.get("微信号")}-{form.get("英文名")}】【{get_date()}】',
+                              recipients=recipients, body=__temp)
+            mail.send(message)
+            logger.info(f"用户:openid:{openid}问卷数据已发送至邮箱库")
+        except:
+            logger.error(f"用户:openid:{openid}邮件发送失败")
+
+
+def save_local(openid, form):
+    with app.app_context():
+        try:
+            __temp = ""
+            for key in form:
+                if key != "openid":
+                    __temp += str(f"{key}: {form.get(key)}\n")
+            with open(f"saves/{form.get('微信号')}_{form.get('英文名')}_{str(int(time.time() * 1000))}.log",
+                      "w") as f:
+                f.write(__temp)
+            logger.info(f"用户:openid:{openid}问卷数据已保存至本地文件")
+        except:
+            logger.error(f"用户:openid:{openid}本地存储失败")
+
+
 @app.route("/upload", methods=["POST"])
 def get_upload_question():
     openid = request.form.get("openid")
     logger.info(f"用户:openid:{openid}提交了问卷结果")
     with open("blacklist.txt", "r") as f:
         blacklist = json.loads(f.read())
+    thread_list = list()
     if openid not in blacklist:
         if configs.SAVE_SQL:
-            __temp = ""
-            for key in request.form:
-                if key != "openid":
-                    __temp += str(f"{key}: {request.form.get(key)}；")
-            questionaire = models.Questionaire(openid=openid, data=__temp)
-            db.session.add(questionaire)
-            db.session.commit()
-            logger.info(f"用户:openid:{openid}问卷数据已上传至数据库")
+            thread_list.append(threading.Thread(target=upload_sql, args=(openid, request.form)))
         if configs.MAIL:
-            __temp = ""
-            for key in request.form:
-                if key != "openid":
-                    __temp += str(f"{key}: {request.form.get(key)}\n")
-            with open("mail.txt", "r") as f:
-                recipients = json.loads(f.read())
-            message = Message(subject=f'收到新的问卷结果【{request.form.get("微信号")}-{request.form.get("英文名")}】【{get_date()}】', recipients=recipients, body=__temp)
-            mail.send(message)
-            logger.info(f"用户:openid:{openid}问卷数据已发送至邮箱库")
+            thread_list.append(threading.Thread(target=send_mail, args=(openid, request.form)))
         if configs.LOCAL:
-            with open(f"saves/{request.form.get('微信号')}_{request.form.get('英文名')}_{str(int(time.time() * 1000))}.log", "w") as f:
-                f.write(__temp)
-            logger.info(f"用户:openid:{openid}问卷数据已保存至本地文件")
+            thread_list.append(threading.Thread(target=save_local, args=(openid, request.form)))
+        for thread in thread_list:
+            thread.start()
+        for thread in thread_list:
+            thread.join()
     return "yes"
 
 
