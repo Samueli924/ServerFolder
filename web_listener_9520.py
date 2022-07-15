@@ -102,7 +102,7 @@ def upload_sql(openid, form):
             for key in form:
                 if key != "openid":
                     __temp += str(f"{key}: {form.get(key)}；")
-                questionaire = models.Questionaire(openid=openid, data=__temp)
+                questionaire = models.Questionaire(openid=openid, data=__temp, submit=get_date())
             db.session.add(questionaire)
             db.session.commit()
             logger.info(f"用户:openid:{openid}问卷数据已上传至数据库")

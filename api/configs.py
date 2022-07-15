@@ -1,4 +1,4 @@
-HOST = '47.112.113.4'
+HOST = '127.0.0.1'
 PORT = '3306'
 DATABASE = 'QUESTION'
 USERNAME = 'samuel'
