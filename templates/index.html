@@ -7,7 +7,123 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>i领寻管理后台</title>
 </head>
+<style>
+    body {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        justify-content: space-between;
+        box-sizing: border-box;
+        font-family: "microsoft yahei",serif;
+        font-size: 0;
+    }
+    .mail-zone {
+        width: 80%;
+        /*background-color: rgba(200,230,255,0.8);*/
+        border: white 1px solid;
+        border-radius: 10px;
+        text-align: center;
+        align-items: center;
+    }
+    .title-name {
+        margin: 10px 0 10px 0;
+        font-size: 16px;
+        font-weight: bold;
+    }
+    .label-zone {
+        width: 90%;
+        margin: 20px 5%;
+        /*background-color: rgba(200, 200, 200, 0.2);*/
+        border-radius: 10px;
+    }
+    .label-name {
+        display: inline-block;
+        font-size: 14px;
+        margin: 5px 10px;
+        padding: 5px 10px;
+        border: 2px gray solid;
+        border-radius: 50px;
+        cursor: pointer;
+    }
+    .label-name::after {
+        content: "×";
+        margin: 0 5px;
+        font-size: 14px;
+        font-weight: bold;
+    }
+
+    .single-line {
+        font-size: 16px;
+        /*font-weight: bold;*/
+    }
+
+    .add {
+        font-size: 16px;
+        margin: 0 20px;
+    }
+
+    .save {
+        font-size: 16px;
+        text-align: center;
+        align-items: center;
+        margin: 0 20px;
+    }
+</style>
 <body>
-    
+    <div class="mail-zone">
+        <div class="title-name">邮箱设置</div>
+        <div class="label-zone" id="label-zone">
+            <div class="label-name" onclick="mail_remove(this)">chenshunkang@lingxun.com</div>
+            <div class="label-name" onclick="mail_remove(this)">ann@lingxun.com</div>
+            <div class="label-name" onclick="mail_remove(this)">tiger@lingxun.com</div>
+        </div>
+        <label class="input-label" for="mail">邮箱号</label>
+        <input type="text" class="single-line" name="mail" id="mail">
+        <button class="add" onclick="add_mail(this)">添加邮箱</button>
+        <button class="save" onclick="save_mail()">保存</button>
+    </div>
 </body>
+<script src="../static/js/jquery_min_3.5.1.js"></script>
+<script>
+    function mail_remove(obj) {
+        obj.remove()
+    }
+
+    function add_mail(obj) {
+        var all_mail = []
+        var found = false
+        let mail_list_node = document.getElementById("label-zone").children
+        Array.prototype.forEach.call(mail_list_node, function (element) {
+            all_mail.push(element.innerText)
+        });
+        let new_mail = document.getElementById("mail").value;
+        all_mail.forEach((item, index) => {
+            if (item === new_mail) {
+                console.log("发现一样的元素")
+                found = true
+            }
+        })
+        if (!found) {
+            let label_zone = document.getElementById("label-zone");
+            let new_div = document.createElement("div");
+            new_div.innerHTML = "<div class=\"label-name\" onclick=\"mail_remove(this)\">" + new_mail + "</div>"
+            label_zone.appendChild(new_div)
+        }
+    }
+
+    function save_mail() {
+        var all_mail = []
+        let mail_list_node = document.getElementById("label-zone").children
+        Array.prototype.forEach.call(mail_list_node, function (element) {
+            all_mail.push(element.innerText)
+        });
+        $.post("https://api.lingxun.com/updateMail", {data: all_mail}, function (result) {
+            console.log(result)
+        }, "json")
+    }
+
+
+</script>
 </html>

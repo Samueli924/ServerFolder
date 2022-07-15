@@ -163,5 +163,18 @@ def get_upload_question():
     return "yes"
 
 
+@app.route("/admin", methods=["GET"])
+def admin_page():
+    return render_template("index.html")
+
+
+@app.route("/updateMail", methods=["POST"])
+def update_mail():
+    print(request.form)
+    # print(mails)
+    # print(type(mails))
+    return "yes"
+
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=9520, debug=False)
